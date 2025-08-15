@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F5 SSL Certificate Lab Guide</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            color: #e0e6ed;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            padding: 40px;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            border-radius: 20px;
+            border: 1px solid #374151;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #fff 0%, #e0e6ed 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .header .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+            background: rgba(31, 41, 55, 0.8);
+            border-radius: 16px;
+            border: 1px solid #374151;
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        
+        .section-header {
+            background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
+            padding: 20px 30px;
+            border-bottom: 1px solid #4b5563;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .section-content {
+            padding: 30px;
+        }
+        
+        .icon {
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .overview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .overview-card {
+            background: rgba(55, 65, 81, 0.5);
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid #4b5563;
+        }
+        
+        .overview-card h4 {
+            color: #60a5fa;
+            font-weight: 600;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+        
+        .overview-card ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .overview-card li {
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .overview-card li:before {
+            content: "✓";
+            color: #10b981;
+            font-weight: bold;
+            width: 16px;
+        }
+        
+        .cert-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: rgba(31, 41, 55, 0.6);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .cert-table th {
+            background: linear-gradient(135deg, #4b5563, #6b7280);
+            color: #fff;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        .cert-table td {
+            padding: 15px;
+            border-bottom: 1px solid #4b5563;
+        }
+        
+        .cert-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .code-block {
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            font-family: 'JetBrains Mono', Monaco, 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #e5e7eb;
+            position: relative;
+            overflow-x: auto;
+        }
+        
+        .code-block:before {
+            content: attr(data-lang);
+            position: absolute;
+            top: -1px;
+            right: 15px;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 0 0 6px 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .command {
+            color: #10b981;
+        }
+        
+        .comment {
+            color: #9ca3af;
+        }
+        
+        .tip {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1));
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            position: relative;
+        }
+        
+        .tip:before {
+            content: "💡";
+            font-size: 1.2rem;
+            margin-right: 8px;
+        }
+        
+        .warning {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.1));
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .troubleshoot-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: rgba(31, 41, 55, 0.6);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .troubleshoot-table th {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            color: #fff;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .troubleshoot-table td {
+            padding: 12px;
+            border-bottom: 1px solid #4b5563;
+            font-size: 0.9rem;
+        }
+        
+        .option-header {
+            background: linear-gradient(135deg, #7c3aed, #5b21b6);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            margin: 20px 0 10px 0;
+        }
+        
+        .flow-diagram {
+            background: rgba(31, 41, 55, 0.6);
+            border: 1px solid #4b5563;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .artifacts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .artifact-item {
+            background: rgba(55, 65, 81, 0.5);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #4b5563;
+            text-align: center;
+        }
+        
+        .artifact-item .emoji {
+            font-size: 2rem;
+            margin-bottom: 8px;
+            display: block;
+        }
+        
+        .step-number {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📝 Student Handout</h1>
+            <p class="subtitle">Creating a Server Certificate on an Internal CA & Installing on F5 LTM for SSL Offloading</p>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span class="icon">0</span>
+                    Lab Overview
+                </h2>
+            </div>
+            <div class="section-content">
+                <div class="overview-grid">
+                    <div class="overview-card">
+                        <h4>What You'll Build</h4>
+                        <ul>
+                            <li>Signed server certificate (with SANs) from an internal CA</li>
+                            <li>F5 Client SSL profile using issued cert + key + chain</li>
+                            <li>HTTPS Virtual Server for TLS offload</li>
+                        </ul>
+                    </div>
+                    <div class="overview-card">
+                        <h4>Assumptions</h4>
+                        <ul>
+                            <li>F5 BIG-IP LTM licensed & reachable</li>
+                            <li>Admin rights on F5 & internal CA</li>
+                            <li>Knowledge/control of DNS name (e.g., app1.lab.local)</li>
+                            <li>Time synced (NTP) on F5 & CA</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <h4 style="color: #60a5fa; margin-bottom: 15px;">Artifacts You Will Create</h4>
+                <div class="artifacts-grid">
+                    <div class="artifact-item">
+                        <span class="emoji">🔑</span>
+                        <strong>app1.key</strong><br>
+                        Private key
+                    </div>
+                    <div class="artifact-item">
+                        <span class="emoji">📄</span>
+                        <strong>app1.csr</strong><br>
+                        Certificate request
+                    </div>
+                    <div class="artifact-item">
+                        <span class="emoji">🏷️</span>
+                        <strong>app1.crt</strong><br>
+                        Signed certificate
+                    </div>
+                    <div class="artifact-item">
+                        <span class="emoji">🔗</span>
+                        <strong>lab-ca-chain.crt</strong><br>
+                        CA chain
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span class="icon">1</span>
+                    Plan the Certificate
+                </h2>
+            </div>
+            <div class="section-content">
+                <table class="cert-table">
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Example / Recommendation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Common Name (CN)</strong></td>
+                            <td>app1.lab.local</td>
+                        </tr>
+                        <tr>
+                            <td><strong>SANs</strong></td>
+                            <td>DNS:app1.lab.local, DNS:app1</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Key Type</strong></td>
+                            <td>RSA-2048+ or ECC P-256</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Lifetime</strong></td>
+                            <td>397–825 days (policy dependent)</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="tip">
+                    <strong>Tip:</strong> Modern browsers require SAN. CN alone is not enough.
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span class="icon">2</span>
+                    Generate Key + CSR
+                </h2>
+            </div>
+            <div class="section-content">
+                <div class="option-header">Option 1 — Off-Box (Linux/OpenSSL)</div>
+                <div class="code-block" data-lang="bash">
+<span class="comment"># RSA key + CSR</span>
+<span class="command">openssl genrsa -out app1.key 2048</span>
+<span class="command">openssl req -new -key app1.key -out app1.csr \</span>
+  <span class="command">-subj "/C=CA/ST=MB/L=Winnipeg/O=Lab/OU=Apps/CN=app1.lab.local" \</span>
+  <span class="command">-addext "subjectAltName = DNS:app1.lab.local,DNS:app1"</span>
+
+<span class="comment"># Remove passphrase (if needed)</span>
+<span class="command">openssl rsa -in app1.key -out app1_nopass.key</span>
+                </div>
+
+                <div class="option-header">Option 2 — On F5 via GUI (TMUI)</div>
+                <div style="background: rgba(55, 65, 81, 0.5); padding: 20px; border-radius: 8px; margin: 15px 0;">
+                    <ol>
+                        <li><strong>Navigate:</strong> Main tab → System → Certificate Management → Traffic Certificate Management</li>
+                        <li><strong>Click:</strong> <code>Create</code> button</li>
+                        <li><strong>Fill Certificate Details:</strong>
+                            <ul style="margin: 10px 0 10px 20px;">
+                                <li><strong>Name:</strong> app1</li>
+                                <li><strong>Issuer:</strong> Certificate Authority</li>
+                                <li><strong>Common Name:</strong> app1.lab.local</li>
+                                <li><strong>Division:</strong> Apps</li>
+                                <li><strong>Organization:</strong> Lab</li>
+                                <li><strong>Locality:</strong> Winnipeg</li>
+                                <li><strong>State or Province:</strong> MB</li>
+                                <li><strong>Country:</strong> Canada</li>
+                                <li><strong>E-mail Address:</strong> admin@lab.local</li>
+                                <li><strong>Subject Alternative Name:</strong> DNS:app1.lab.local,DNS:app1</li>
+                                <li><strong>Challenge Password:</strong> (optional)</li>
+                                <li><strong>Key Type:</strong> RSA</li>
+                                <li><strong>Key Size:</strong> 2048</li>
+                            </ul>
+                        </li>
+                        <li><strong>Click:</strong> <code>Finished</code></li>
+                        <li><strong>Download CSR:</strong> Copy from "Request Text" field or click download button</li>
+                    </ol>
+                </div>
+
+                <div class="option-header">Option 3 — On F5 via CLI (tmsh)</div>
+                <div class="code-block" data-lang="tmsh">
+<span class="command">create sys crypto key app1.key size 2048</span>
+<span class="command">create sys crypto csr app1.csr key app1.key \</span>
+  <span class="command">common-name app1.lab.local \</span>
+  <span class="command">organization Lab division Apps \</span>
+  <span class="command">locality Winnipeg state MB country CA \</span>
+  <span class="command">subject-alternative-name { DNS:app1.lab.local DNS:app1 }</span>
+                </div>
+
+                <div class="tip">
+                    <strong>Tip:</strong> Download CSR via TMUI or SCP to submit to CA
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span class="icon">3</span>
+                    Get the CSR Signed by Internal CA
+                </h2>
+            </div>
+            <div class="section-content">
+                <div class="option-header">Track A — Windows AD CS</div>
+                <ol>
+                    <li>Prepare a server certificate template on CA</li>
+                    <li>Submit CSR via <code>https://&lt;CA-Server&gt;/certsrv</code></li>
+                    <li>Download:
+                        <ul style="margin-top: 10px; margin-left: 20px;">
+                            <li>Base64 encoded server cert → <strong>app1.crt</strong></li>
+                            <li>CA chain → <strong>lab-ca-chain.crt</strong></li>
+                        </ul>
+                    </li>
+                </ol>
+
+                <div class="option-header" style="margin-top: 30px;">Track B — OpenSSL/Linux CA</div>
+                <div class="code-block" data-lang="bash">
+<span class="command">openssl x509 -req -in app1.csr -CA ~/myca/certs/ca.crt \</span>
+  <span class="command">-CAkey ~/myca/private/ca.key -CAcreateserial \</span>
+  <span class="command">-out app1.crt -days 397 -sha256 -extfile san.ext</span>
+<span class="command">cp ~/myca/certs/ca.crt lab-ca-chain.crt</span>
+                </div>
+
+                <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.1)); border: 1px solid rgba(16, 185, 129, 0.5); border-radius: 8px; padding: 15px; margin: 15px 0; text-align: center; font-weight: 600;">
+                    ✅ You now have app1.crt and lab-ca-chain.crt
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span class="icon">4</span>
+                    Import Cert, Key & Chain into F5
+                </h2>
+            </div>
+            <div class="section-content">
+                <div class="option-header">GUI (TMUI) Method - Detailed Steps</div>
+                <div style="background: rgba(55, 65, 81, 0.5); padding: 20px; border-radius: 8px; margin: 15px 0;">
+                    <h5 style="color: #60a5fa; margin-bottom: 15px;">Step 1: Upload Certificate Files</h5>
+                    <ol>
+                        <li><strong>Navigate:</strong> Main tab → System → File Management → SSL Certificate List</li>
+                        <li><strong>Click:</strong> <code>Import</code> button</li>
+                        <li><strong>Upload each file:</strong>
+                            <ul style="margin: 10px 0 10px 20px;">
+                                <li><strong>Certificate:</strong>
+                                    <ul style="margin: 5px 0 5px 20px;">
+                                        <li>Import Type: <code>Certificate</code></li>
+                                        <li>Certificate Name: <code>Create New</code> → <code>app1</code></li>
+                                        <li>Certificate Source: <code>Upload File</code> → browse to <code>app1.crt</code></li>
+                                        <li>Click: <code>Import</code></li>
+                                    </ul>
+                                </li>
+                                <li><strong>Private Key:</strong>
+                                    <ul style="margin: 5px 0 5px 20px;">
+                                        <li>Import Type: <code>Key</code></li>
+                                        <li>Key Name: <code>Create New</code> → <code>app1</code></li>
+                                        <li>Key Source: <code>Upload File</code> → browse to <code>app1.key</code></li>
+                                        <li>Password: (leave blank if no passphrase)</li>
+                                        <li>Security Type: <code>Normal</code></li>
+                                        <li>Click: <code>Import</code></li>
+                                    </ul>
+                                </li>
+                                <li><strong>Certificate Chain:</strong>
+                                    <ul style="margin: 5px 0 5px 20px;">
+                                        <li>Import Type: <code>Certificate</code></li>
+                                        <li>Certificate Name: <code>Create New</code> → <code>lab-ca-chain</code></li>
+                                        <li>Certificate Source: <code>Upload File</code> → browse to <code>lab-ca-chain.crt</code></li>
+                                        <li>Click: <code>Import</code></li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                    </ol>
+                    
+                    <h5 style="color: #60a5fa; margin: 25px 0 15px 0;">Step 2: Verify Import Success</h5>
+                    <ol>
+                        <li>Navigate back to: <strong>System → Certificate Management → Traffic Certificate Management</strong></li>
+                        <li>Verify all three items appear in the certificate list:
+                            <ul style="margin: 10px 0 10px 20px;">
+                                <li>✅ <code>app1</code> (Certificate)</li>
+                                <li>✅ <code>app1</code> (Key)</li>
+                                <li>✅ <code>lab-ca-chain</code> (Certificate)</li>
+                            </ul>
+                        </li>
+                        <li>Click on certificate name to view details and verify expiration date</li>
+                    </ol>
+                </div>
+
+                <div class="option-header">CLI (tmsh) Method</div>
+                <div class="code-block" data-lang="tmsh">
+<span class="command">install sys crypto key app1.key from-file /var/tmp/app1.key</span>
+<span class="command">install sys crypto cert app1.crt from-file /var/tmp/app1.crt</span>
+<span class="command">install sys crypto cert lab-ca-chain.crt from-file /var/tmp/lab-ca-chain.crt</span>
+                </div>
+
+                <div class="tip">
+                    <strong>Tip:</strong> Verify key & certificate match with modulus check
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span class="icon">5</span>
+                    Create Client SSL Profile & Attach to Virtual Server
+                </h2>
+            </div>
+            <div class="section-content">
+                <div class="option-header">GUI Method: Create Client SSL Profile</div>
+                <div style="background: rgba(55, 65, 81, 0.5); padding: 20px; border-radius: 8px; margin: 15px 0;">
+                    <h5 style="color: #60a5fa; margin-bottom: 15px;">Step 1: Navigate to SSL Profiles</h5>
+                    <ol>
+                        <li><strong>Main tab</strong> → <strong>Local Traffic</strong> → <strong>Profiles</strong> → <strong>SSL</strong> → <strong>Client</strong></li>
+                        <li>Click: <code>Create</code> button</li>
+                    </ol>
+
+                    <h5 style="color: #60a5fa; margin: 25px 0 15px 0;">Step 2: Configure SSL Profile</h5>
+                    <ol>
+                        <li><strong>General Properties:</strong>
+                            <ul style="margin: 10px 0 10px 20px;">
+                                <li><strong>Name:</strong> <code>app1_clientssl</code></li>
+                                <li><strong>Parent Profile:</strong> <code>clientssl</code> (default)</li>
+                            </ul>
+                        </li>
+                        <li><strong>Configuration Section - Certificate Key Chain:</strong>
+                            <ul style="margin: 10px 0 10px 20px;">
+                                <li>Click: <code>Add</code> button in Certificate Key Chain section</li>
+                                <li><strong>Certificate:</strong> Select <code>app1.crt</code> from dropdown</li>
+                                <li><strong>Key:</strong> Select <code>app1.key</code> from dropdown</li>
+                                <li><strong>Chain:</strong> Select <code>lab-ca-chain.crt</code> from dropdown</li>
+                                <li><strong>Passphrase:</strong> Leave blank (if key has no passphrase)</li>
+                                <li>Click: <code>Add</code> to confirm the certificate key chain</li>
+                            </ul>
+                        </li>
+                        <li><strong>Optional SSL Settings:</strong>
+                            <ul style="margin: 10px 0 10px 20px;">
+                                <li><strong>Ciphers:</strong> DEFAULT (or customize as needed)</li>
+                                <li><strong>Options:</strong> Leave default selections</li>
+                            </ul>
+                        </li>
+                        <li>Click: <code>Finished</code></li>
+                    </ol>
+                </div>
+
+                <div class="option-header">CLI Method: Create Client SSL Profile</div>
+                <div class="code-block" data-lang="tmsh">
+<span class="command">create ltm profile client-ssl app1_clientssl \</span>
+  <span class="command">defaults-from clientssl \</span>
+  <span class="command">cert app1.crt key app1.key chain lab-ca-chain.crt</span>
+                </div>
+
+                <div class="option-header">GUI Method: Create HTTPS Virtual Server</div>
+                <div style="background: rgba(55, 65, 81, 0.5); padding: 20px; border-radius: 8px; margin: 15px 0;">
+                    <h5 style="color: #60a5fa; margin-bottom: 15px;">Step 1: Create Virtual Server</h5>
+                    <ol>
+                        <li><strong>Navigate:</strong> Main tab → Local Traffic → Virtual Servers → Virtual Server List</li>
+                        <li>Click: <code>Create</code> button</li>
+                    </ol>
+
+                    <h5 style="color: #60a5fa; margin: 25px 0 15px 0;">Step 2: Configure General Properties</h5>
+                    <ol>
+                        <li><strong>Name:</strong> <code>vs_app1_https</code></li>
+                        <li><strong>Destination Address/Mask:</strong> <code>10.10.10.50</code></li>
+                        <li><strong>Service Port:</strong> <code>443</code> (or select HTTPS from dropdown)</li>
+                        <li><strong>HTTP Profile:</strong> <code>http</code></li>
+                        <li><strong>SSL Profile (Client):</strong> <code>app1_clientssl</code></li>
+                    </ol>
+
+                    <h5 style="color: #60a5fa; margin: 25px 0 15px 0;">Step 3: Configure Resources</h5>
+                    <ol>
+                        <li><strong>Default Pool:</strong> Select <code>app1_pool</code> (create pool first if needed)</li>
+                        <li><strong>Source Address Translation:</strong>
+                            <ul style="margin: 10px 0 10px 20px;">
+                                <li><strong>Type:</strong> Auto Map</li>
+                            </ul>
+                        </li>
+                    </ol>
+
+                    <h5 style="color: #60a5fa; margin: 25px 0 15px 0;">Step 4: Optional Compression</h5>
+                    <ol>
+                        <li><strong>Compression Profile:</strong> <code>httpcompression</code> (optional for performance)</li>
+                        <li>Click: <code>Finished</code></li>
+                    </ol>
+                </div>
+
+                <div class="option-header">CLI Method: Create HTTPS Virtual Server</div>
+                <div class="code-block" data-lang="tmsh">
+<span class="command">create ltm virtual vs_app1_https destination 10.10.10.50:443 \</span>
+  <span class="command">profiles add { http httpcompression app1_clientssl } \</span>
+  <span class="command">pool app1_pool \</span>
+  <span class="command">source-address-translation { type automap }</span>
+                </div>
+
+                <div class="option-header">GUI Method: Create HTTP to HTTPS Redirect</div>
+                <div style="background: rgba(55, 65, 81, 0.5); padding: 20px; border-radius: 8px; margin: 15px 0;">
+                    <h5 style="color: #60a5fa; margin-bottom: 15px;">Step 1: Create iRule for Redirect</h5>
+                    <ol>
+                        <li><strong>Navigate:</strong> Main tab → Local Traffic → iRules → iRule List</li>
+                        <li>Click: <code>Create</code> button</li>
+                        <li><strong>Name:</strong> <code>https_redirect</code></li>
+                        <li><strong>Definition:</strong> Paste the iRule code below</li>
+                        <li>Click: <code>Finished</code></li>
+                    </ol>
+
+                    <h5 style="color: #60a5fa; margin: 25px 0 15px 0;">Step 2: Create HTTP Virtual Server</h5>
+                    <ol>
+                        <li><strong>Navigate:</strong> Main tab → Local Traffic → Virtual Servers → Virtual Server List</li>
+                        <li>Click: <code>Create</code> button</li>
+                        <li><strong>Name:</strong> <code>vs_app1_http</code></li>
+                        <li><strong>Destination:</strong> <code>10.10.10.50:80</code></li>
+                        <li><strong>Resources → iRules:</strong> Move <code>https_redirect</code> to Selected</li>
+                        <li>Click: <code>Finished</code></li>
+                    </ol>
+                </div>
+
+                <div class="option-header">iRule Code for HTTP → HTTPS Redirect</div>
+                <div class="code-block" data-lang="irule">
+when HTTP_REQUEST {
+  HTTP::redirect "https://[HTTP::host][HTTP::uri]"
+}
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span class="icon">6</span>
+                    Validate Deployment
+                </h2>
+            </div>
+            <div class="section-content">
+                <div class="option-header">GUI Validation Steps</div>
+                <div style="background: rgba(55, 65, 81, 0.5); padding: 20px; border-radius: 8px; margin: 15px 0;">
+                    <h5 style="color: #60a5fa; margin-bottom: 15px;">Step 1: Verify DNS Resolution</h5>
+                    <ol>
+                        <li>From client machine: <code>nslookup app1.lab.local</code></li>
+                        <li>Should resolve to Virtual Server IP: <code>10.10.10.50</code></li>
+                    </ol>
+
+                    <h5 style="color: #60a5fa; margin: 25px 0 15px 0;">Step 2: Test HTTPS Connection</h5>
+                    <ol>
+                        <li><strong>Browser Test:</strong> Navigate to <code>https://app1.lab.local</code></li>
+                        <li><strong>Command Line Test:</strong> <code>curl -I https://app1.lab.local</code></li>
+                        <li>✅ Should return HTTP 200 without certificate warnings</li>
+                    </ol>
+
+                    <h5 style="color: #60a5fa; margin: 25px 0 15px 0;">Step 3: F5 Virtual Server Status Check</h5>
+                    <ol>
+                        <li><strong>Navigate:</strong> Main tab → Local Traffic → Virtual Servers → Virtual Server List</li>
+                        <li>Verify <code>vs_app1_https</code> shows: 
+                            <ul style="margin: 10px 0 10px 20px;">
+                                <li>✅ Status: <span style="color: #10b981;">Available (Enabled - Green)</span></li>
+                                <li>✅ SSL Profile: <code>app1_clientssl</code></li>
+                            </ul>
+                        </li>
+                    </ol>
+
+                    <h5 style="color: #60a5fa; margin: 25px 0 15px 0;">Step 4: F5 Pool Member Status</h5>
+                    <ol>
+                        <li><strong>Navigate:</strong> Main tab → Local Traffic → Pools → Pool List</li>
+                        <li>Click on <code>app1_pool</code></li>
+                        <li>Verify pool members are: <span style="color: #10b981;">Available (Enabled - Green)</span></li>
+                    </ol>
+                </div>
+
+                <div class="option-header">Command Line Validation</div>
+                <ol>
+                    <li><span class="step-number">1</span>DNS resolves → <code>app1.lab.local</code></li>
+                    <li><span class="step-number">2</span>Browser/curl test → <code>curl -I https://app1.lab.local</code></li>
+                    <li><span class="step-number">3</span>Certificate chain → <code>openssl s_client -connect app1.lab.local:443 -showcerts</code></li>
+                    <li><span class="step-number">4</span>Key/Cert match → <code>openssl x509 -noout -modulus -in app1.crt | openssl md5</code></li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span class="icon">7</span>
+                    Renewal Workflow
+                </h2>
+            </div>
+            <div class="section-content">
+                <div class="option-header">GUI Method: Certificate Renewal Process</div>
+                <div style="background: rgba(55, 65, 81, 0.5); padding: 20px; border-radius: 8px; margin: 15px 0;">
+                    <h5 style="color: #60a5fa; margin-bottom: 15px;">Step 1: Generate New CSR (Reusing Existing Key)</h5>
+                    <ol>
+                        <li><strong>Navigate:</strong> Main tab → System → Certificate Management → Traffic Certificate Management</li>
+                        <li>Click on existing certificate: <code>app1</code></li>
+                        <li>Click: <code>Key</code> tab to view associated key</li>
+                        <li>Note the key name for reuse, or generate new key if needed</li>
+                    </ol>
+
+                    <h5 style="color: #60a5fa; margin: 25px 0 15px 0;">Step 2: Submit New CSR to CA</h5>
+                    <ol>
+                        <li>Use same process as initial certificate request</li>
+                        <li>Download new signed certificate</li>
+                        <li>Keep same filename: <code>app1.crt</code></li>
+                    </ol>
+
+                    <h5 style="color: #60a5fa; margin: 25px 0 15px 0;">Step 3: Import New Certificate</h5>
+                    <ol>
+                        <li><strong>Navigate:</strong> Main tab → System → Certificate Management → Traffic Certificate Management</li>
+                        <li>Click: <code>Import</code></li>
+                        <li><strong>Import Type:</strong> Certificate</li>
+                        <li><strong>Certificate Name:</strong> <code>Overwrite Existing</code> → select <code>app1</code></li>
+                        <li>Upload new certificate file</li>
+                        <li>Click: <code>Import</code></li>
+                    </ol>
+
+                    <h5 style="color: #60a5fa; margin: 25px 0 15px 0;">Step 4: Verify SSL Profile Update</h5>
+                    <ol>
+                        <li><strong>Navigate:</strong> Main tab → Local Traffic → Profiles → SSL → Client</li>
+                        <li>Click on: <code>app1_clientssl</code></li>
+                        <li>Verify certificate expiration date is updated</li>
+                        <li>SSL profile automatically uses the updated certificate</li>
+                    </ol>
+
+                    <h5 style="color: #60a5fa; margin: 25px 0 15px 0;">Step 5: Zero-Downtime Renewal (Advanced)</h5>
+                    <ol>
+                        <li>Import new certificate with different name: <code>app1_new</code></li>
+                        <li>Update SSL profile to use new certificate</li>
+                        <li>Test the connection</li>
+                        <li>Delete old certificate once confirmed working</li>
+                    </ol>
+                </div>
+
+                <div class="option-header">CLI Method: Certificate Renewal</div>
+                <ol>
+                    <li><span class="step-number">1</span>Generate new CSR or reuse key</li>
+                    <li><span class="step-number">2</span>Submit to CA → download new certificate</li>
+                    <li><span class="step-number">3</span>Import new cert → update Client SSL profile</li>
+                    <li><span class="step-number">4</span>Validate → openssl s_client, browser checks</li>
+                    <li><span class="step-number">5</span>Optional: Zero downtime → import alongside old cert, switch VS, delete old</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span class="icon">8</span>
+                    Common Pitfalls & Fixes
+                </h2>
+            </div>
+            <div class="section-content">
+                <table class="troubleshoot-table">
+                    <thead>
+                        <tr>
+                            <th>Symptom</th>
+                            <th>Cause</th>
+                            <th>Fix</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Browser shows name mismatch</td>
+                            <td>Missing SANs</td>
+                            <td>Regenerate CSR with SANs</td>
+                        </tr>
+                        <tr>
+                            <td>Certificate not trusted</td>
+                            <td>Intermediate missing</td>
+                            <td>Import full chain into F5</td>
+                        </tr>
+                        <tr>
+                            <td>F5 rejects key</td>
+                            <td>Passphrase protected</td>
+                            <td>Remove passphrase</td>
+                        </tr>
+                        <tr>
+                            <td>Handshake failure</td>
+                            <td>Cipher/TLS mismatch</td>
+                            <td>Adjust profile settings</td>
+                        </tr>
+                        <tr>
+                            <td>Clock skew</td>
+                            <td>NTP incorrect</td>
+                            <td>Sync F5 & CA clocks</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span class="icon">9</span>
+                    HTTPS Virtual Server (SSL Offload)
+                </h2>
+            </div>
+            <div class="section-content">
+            <div class="section-content">
+                <div class="option-header">GUI Method: Create HTTPS Virtual Server</div>
+                <div style="background: rgba(55, 65, 81, 0.5); padding: 20px; border-radius: 8px; margin: 15px 0;">
+                    <h5 style="color: #60a5fa; margin-bottom: 15px;">Complete GUI Walkthrough</h5>
+                    <ol>
+                        <li><strong>Navigate:</strong> Main tab → Local Traffic → Virtual Servers → Virtual Server List</li>
+                        <li><strong>Click:</strong> <code>Create</code></li>
+                        <li><strong>General Properties:</strong>
+                            <ul style="margin: 10px 0 10px 20px;">
+                                <li><strong>Name:</strong> <code>vs_https_example</code></li>
+                                <li><strong>Destination Address/Mask:</strong> <code>10.1.1.500</code></li>
+                                <li><strong>Service Port:</strong> <code>443</code> (HTTPS)</li>
+                            </ul>
+                        </li>
+                        <li><strong>Configuration:</strong>
+                            <ul style="margin: 10px 0 10px 20px;">
+                                <li><strong>HTTP Profile:</strong> <code>http</code></li>
+                                <li><strong>SSL Profile (Client):</strong> <code>clientssl_internal</code></li>
+                            </ul>
+                        </li>
+                        <li><strong>Resources:</strong>
+                            <ul style="margin: 10px 0 10px 20px;">
+                                <li><strong>Default Pool:</strong> <code>pool_webservers</code></li>
+                                <li><strong>Source Address Translation:</strong> Auto Map</li>
+                            </ul>
+                        </li>
+                        <li><strong>Click:</strong> <code>Finished</code></li>
+                    </ol>
+                </div>
+
+                <div class="option-header">CLI Method</div>
+                <div class="code-block" data-lang="tmsh">
+<span class="command">create ltm virtual vs_https_example destination 10.1.1.500:443 \</span>
+<span class="command">profiles add { clientssl_internal http } pool pool_webservers</span>
+                </div>
+
+                <div class="flow-diagram">
+                    <strong>SSL Offload Flow:</strong><br>
+                    🌐 Client (HTTPS) → 🖥️ F5 LTM (decrypt) → 🔓 Backend Server (HTTP)
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span class="icon">10</span>
+                    Troubleshooting & Renewal
+                </h2>
+            </div>
+            <div class="section-content">
+                <table class="troubleshoot-table">
+                    <thead>
+                        <tr>
+                            <th>Symptom</th>
+                            <th>Cause</th>
+                            <th>Fix</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Not Secure browser</td>
+                            <td>Missing CA trust</td>
+                            <td>Import CA cert in client</td>
+                        </tr>
+                        <tr>
+                            <td>App still HTTP</td>
+                            <td>Hardcoded URL</td>
+                            <td>Update to HTTPS or redirect</td>
+                        </tr>
+                        <tr>
+                            <td>SSL handshake failure</td>
+                            <td>Cipher mismatch</td>
+                            <td>Adjust SSL profile</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="option-header" style="margin-top: 30px;">Renewal Steps</div>
+                <p style="margin: 15px 0;">Generate new CSR or reuse key → submit to CA → import → update Client SSL profile → test</p>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 50px; padding: 30px; background: rgba(31, 41, 55, 0.8); border-radius: 16px; border: 1px solid #374151;">
+            <h3 style="color: #60a5fa; margin-bottom: 20px;">💡 Visual Notes for Students</h3>
+            <div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap;">
+                <span>🔑 Private key</span>
+                <span>📄 CSR</span>
+                <span>🏷️ Certificate</span>
+                <span>🔗 Chain</span>
+                <span>🖥️ Virtual Server</span>
+                <span>🌐 Client Browser</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced HTTP CLI Simulator</title>
+    <style>
+        :root {
+            --bg-dark: #121212;
+            --bg-darker: #0a0a0a;
+            --terminal-green: #4AF626;
+            --terminal-blue: #5D8BF4;
+            --terminal-yellow: #F9E64F;
+            --terminal-red: #FF5F56;
+            --terminal-purple: #C678DD;
+            --terminal-cyan: #5DEDF2;
+            --terminal-text: #E0E0E0;
+            --terminal-cursor: #50FA7B;
+            --terminal-gray: #808080;
+        }
+        
+        body {
+            font-family: 'Fira Code', monospace;
+            background-color: var(--bg-dark);
+            color: var(--terminal-text);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.5;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: var(--terminal-green);
+            text-align: center;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+            font-size: 1.8rem;
+        }
+        
+        .cli-container {
+            background-color: var(--bg-darker);
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            margin-bottom: 30px;
+        }
+        
+        .control-panel {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .method-selector {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .method-btn {
+            background: #1E1E1E;
+            border: 1px solid #333;
+            color: var(--terminal-text);
+            padding: 8px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+        }
+        
+        .method-btn.active {
+            border-color: var(--terminal-green);
+            font-weight: bold;
+        }
+        
+        .method-get { color: var(--terminal-green); }
+        .method-post { color: var(--terminal-blue); }
+        .method-put { color: var(--terminal-yellow); }
+        .method-patch { color: var(--terminal-cyan); }
+        .method-delete { color: var(--terminal-red); }
+        .method-head { color: var(--terminal-purple); }
+        .method-options { color: var(--terminal-gray); }
+        
+        .url-input {
+            flex-grow: 1;
+            background: #1E1E1E;
+            border: 1px solid #333;
+            color: var(--terminal-text);
+            padding: 8px 12px;
+            border-radius: 3px;
+            font-family: 'Fira Code', monospace;
+        }
+        
+        .send-btn {
+            background: var(--terminal-green);
+            color: var(--bg-dark);
+            border: none;
+            padding: 8px 15px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: bold;
+            font-family: 'Fira Code', monospace;
+        }
+        
+        .request-display {
+            background: #1E1E1E;
+            padding: 15px;
+            border-radius: 3px;
+            margin-bottom: 20px;
+            border-left: 3px solid var(--terminal-blue);
+        }
+        
+        .response-display {
+            background: #1E1E1E;
+            padding: 15px;
+            border-radius: 3px;
+            min-height: 200px;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 0.9rem;
+        }
+        
+        .status-line {
+            color: var(--terminal-green);
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        
+        .status-1xx { color: var(--terminal-blue); }
+        .status-2xx { color: var(--terminal-green); }
+        .status-3xx { color: var(--terminal-yellow); }
+        .status-4xx { color: var(--terminal-red); }
+        .status-5xx { color: var(--terminal-purple); }
+        
+        .explanation {
+            background-color: #1E1E1E;
+            padding: 15px;
+            border-radius: 3px;
+            border-left: 3px solid var(--terminal-blue);
+            margin-top: 20px;
+        }
+        
+        .examples {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .example-card {
+            background-color: var(--bg-darker);
+            border-radius: 3px;
+            padding: 15px;
+            cursor: pointer;
+            border-left: 3px solid var(--terminal-blue);
+            transition: all 0.2s;
+        }
+        
+        .example-card:hover {
+            background-color: #1A1A1A;
+            transform: translateY(-2px);
+        }
+        
+        .example-card[data-code^="1"] { border-left-color: var(--terminal-blue); }
+        .example-card[data-code^="2"] { border-left-color: var(--terminal-green); }
+        .example-card[data-code^="3"] { border-left-color: var(--terminal-yellow); }
+        .example-card[data-code^="4"] { border-left-color: var(--terminal-red); }
+        .example-card[data-code^="5"] { border-left-color: var(--terminal-purple); }
+        
+        .example-code {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .example-desc {
+            font-size: 0.9em;
+            color: #888;
+        }
+        
+        .hl {
+            color: var(--terminal-green);
+            font-weight: bold;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <h1>HTTP CLI Simulator</h1>
+        
+        <div class="cli-container">
+            <div class="control-panel">
+                <div class="method-selector">
+                    <button class="method-btn method-get active" data-method="GET">GET</button>
+                    <button class="method-btn method-post" data-method="POST">POST</button>
+                    <button class="method-btn method-put" data-method="PUT">PUT</button>
+                    <button class="method-btn method-patch" data-method="PATCH">PATCH</button>
+                    <button class="method-btn method-delete" data-method="DELETE">DELETE</button>
+                    <button class="method-btn method-head" data-method="HEAD">HEAD</button>
+                    <button class="method-btn method-options" data-method="OPTIONS">OPTIONS</button>
+                </div>
+                <input type="text" class="url-input" id="url-input" value="/api/users/123">
+                <button class="send-btn" id="send-btn">SEND</button>
+            </div>
+            
+            <div class="request-display" id="request-display">
+<span class="hl">GET</span> /api/users/123 HTTP/1.1
+Host: api.example.com
+User-Agent: HTTP-CLI-Simulator/1.0
+Accept: application/json
+            </div>
+            
+            <div class="response-display" id="response-display">
+HTTP/1.1 <span class="hl status-2xx">200 OK</span>
+Server: nginx/1.18.0
+Content-Type: application/json
+Content-Length: 125
+Date: <span id="response-date">Sat, 15 Oct 2023 14:30:00 GMT</span>
+
+{
+  "id": 123,
+  "name": "John Doe",
+  "email": "john@example.com"
+}
+            </div>
+        </div>
+        
+        <div class="explanation" id="explanation">
+            <strong>200 OK</strong> - The request has succeeded. For GET requests, the response contains the requested resource. For other methods, it typically contains the result of the operation.
+        </div>
+        
+        <h2>Quick Examples</h2>
+        <div class="examples">
+            <!-- 2xx Success -->
+            <div class="example-card" data-code="200" data-method="GET" onclick="loadExample('GET', 200, 'OK')">
+                <div class="example-code">200 OK</div>
+                <div class="example-desc">Standard success response for GET requests</div>
+            </div>
+            
+            <div class="example-card" data-code="201" data-method="POST" onclick="loadExample('POST', 201, 'Created')">
+                <div class="example-code">201 Created</div>
+                <div class="example-desc">Resource created successfully</div>
+            </div>
+            
+            <div class="example-card" data-code="204" data-method="DELETE" onclick="loadExample('DELETE', 204, 'No Content')">
+                <div class="example-code">204 No Content</div>
+                <div class="example-desc">Successful deletion (no response body)</div>
+            </div>
+            
+            <!-- 3xx Redirection -->
+            <div class="example-card" data-code="301" data-method="GET" onclick="loadExample('GET', 301, 'Moved Permanently')">
+                <div class="example-code">301 Moved</div>
+                <div class="example-desc">Resource permanently relocated</div>
+            </div>
+            
+            <!-- 4xx Client Errors -->
+            <div class="example-card" data-code="400" data-method="POST" onclick="loadExample('POST', 400, 'Bad Request')">
+                <div class="example-code">400 Bad Request</div>
+                <div class="example-desc">Invalid request syntax</div>
+            </div>
+            
+            <div class="example-card" data-code="401" data-method="GET" onclick="loadExample('GET', 401, 'Unauthorized')">
+                <div class="example-code">401 Unauthorized</div>
+                <div class="example-desc">Authentication required</div>
+            </div>
+            
+            <div class="example-card" data-code="403" data-method="GET" onclick="loadExample('GET', 403, 'Forbidden')">
+                <div class="example-code">403 Forbidden</div>
+                <div class="example-desc">No permission to access</div>
+            </div>
+            
+            <div class="example-card" data-code="404" data-method="GET" onclick="loadExample('GET', 404, 'Not Found')">
+                <div class="example-code">404 Not Found</div>
+                <div class="example-desc">Resource doesn't exist</div>
+            </div>
+            
+            <!-- 5xx Server Errors -->
+            <div class="example-card" data-code="500" data-method="POST" onclick="loadExample('POST', 500, 'Internal Server Error')">
+                <div class="example-code">500 Server Error</div>
+                <div class="example-desc">Server encountered an error</div>
+            </div>
+            
+            <div class="example-card" data-code="503" data-method="GET" onclick="loadExample('GET', 503, 'Service Unavailable')">
+                <div class="example-code">503 Unavailable</div>
+                <div class="example-desc">Server temporarily down</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Current state
+        let currentMethod = 'GET';
+        let currentUrl = '/api/users/123';
+        
+        // Method explanations
+        const methodExplanations = {
+            GET: "Retrieve a representation of the resource. Should be safe and idempotent.",
+            POST: "Submit an entity to the specified resource, often causing a change in state.",
+            PUT: "Replace all current representations of the target resource with the request payload.",
+            PATCH: "Apply partial modifications to a resource.",
+            DELETE: "Remove the specified resource.",
+            HEAD: "Identical to GET but without the response body.",
+            OPTIONS: "Describe the communication options for the target resource."
+        };
+        
+        // Status code explanations
+        const statusExplanations = {
+            200: {
+                detail: "The request has succeeded. The response payload depends on the request method:\n\nGET: The resource has been fetched and is transmitted in the response body.\nPOST: A description of the result of the action.\nPUT/PATCH: A representation of the modified resource.",
+                template: `HTTP/1.1 200 OK
+Server: nginx/1.18.0
+Content-Type: application/json
+Content-Length: 125
+Date: {DATE}
+
+{
+  "id": 123,
+  "name": "John Doe",
+  "email": "john@example.com"
+}`
+            },
+            201: {
+                detail: "The request has been fulfilled and resulted in a new resource being created. The response should include:\n\n- Location header with URI of new resource\n- Representation of the resource in the body (optional)",
+                template: `HTTP/1.1 201 Created
+Server: nginx/1.18.0
+Location: /api/users/456
+Content-Type: application/json
+Content-Length: 85
+Date: {DATE}
+
+{
+  "id": 456,
+  "status": "created"
+}`
+            },
+            204: {
+                detail: "The server successfully processed the request but is not returning any content. Commonly used for:\n\n- DELETE requests\n- Form submissions where no response body is needed\n- HEAD requests",
+                template: `HTTP/1.1 204 No Content
+Server: nginx/1.18.0
+Date: {DATE}`
+            },
+            301: {
+                detail: "The requested resource has been permanently moved to a new URL. Clients should:\n\n- Update bookmarks\n- Search engines should update their links\n- Future requests should use the new URL",
+                template: `HTTP/1.1 301 Moved Permanently
+Server: nginx/1.18.0
+Location: https://new.example.com/api/users/123
+Date: {DATE}
+Content-Length: 0`
+            },
+            400: {
+                detail: "The server cannot process the request due to client error. Common causes:\n\n- Malformed request syntax\n- Invalid request parameters\n- Size too large\n- Invalid JSON",
+                template: `HTTP/1.1 400 Bad Request
+Server: nginx/1.18.0
+Content-Type: application/json
+Content-Length: 75
+Date: {DATE}
+
+{
+  "error": "Invalid email format",
+  "field": "email"
+}`
+            },
+            401: {
+                detail: "The request requires authentication. The response must include a WWW-Authenticate header for basic authentication challenges.",
+                template: `HTTP/1.1 401 Unauthorized
+Server: nginx/1.18.0
+WWW-Authenticate: Basic realm="Access to site"
+Date: {DATE}
+Content-Length: 0`
+            },
+            403: {
+                detail: "The server understood the request but refuses to authorize it. Unlike 401, authentication won't help.\n\nCommon scenarios:\n- Insufficient permissions\n- IP blocked\n- Read-only mode",
+                template: `HTTP/1.1 403 Forbidden
+Server: nginx/1.18.0
+Content-Type: application/json
+Content-Length: 60
+Date: {DATE}
+
+{
+  "error": "Admin access required"
+}`
+            },
+            404: {
+                detail: "The server did not find anything matching the Request-URI. Either:\n\n- The resource never existed\n- It was deleted\n- The URI is misspelled",
+                template: `HTTP/1.1 404 Not Found
+Server: nginx/1.18.0
+Content-Type: text/html
+Content-Length: 150
+Date: {DATE}
+
+<html>
+  <body>
+    <h1>404 Not Found</h1>
+    <p>The requested resource was not found</p>
+  </body>
+</html>`
+            },
+            500: {
+                detail: "The server encountered an unexpected condition that prevented it from fulfilling the request.\n\nThis is always the server's fault. Common causes:\n- Unhandled exceptions\n- Database connection failed\n- Configuration errors",
+                template: `HTTP/1.1 500 Internal Server Error
+Server: nginx/1.18.0
+Content-Type: application/json
+Content-Length: 80
+Date: {DATE}
+
+{
+  "error": "Internal server error",
+  "request_id": "abc123"
+}`
+            },
+            503: {
+                detail: "The server is currently unable to handle the request due to temporary overload or maintenance.\n\nClients should:\n- Retry after some delay\n- Check Retry-After header if provided",
+                template: `HTTP/1.1 503 Service Unavailable
+Server: nginx/1.18.0
+Retry-After: 3600
+Date: {DATE}
+Content-Type: text/html
+Content-Length: 200
+
+<html>
+  <body>
+    <h1>503 Service Unavailable</h1>
+    <p>We're down for maintenance. Please try again later.</p>
+  </body>
+</html>`
+            }
+        };
+
+        // Format current date for headers
+        function formatDate() {
+            const now = new Date();
+            return now.toUTCString();
+        }
+
+        // Update the request display
+        function updateRequestDisplay() {
+            const requestDisplay = document.getElementById('request-display');
+            let requestHeaders = `${currentMethod} ${currentUrl} HTTP/1.1
+Host: api.example.com
+User-Agent: HTTP-CLI-Simulator/1.0
+Accept: application/json`;
+            
+            if (['POST', 'PUT', 'PATCH'].includes(currentMethod)) {
+                requestHeaders += `\nContent-Type: application/json\nContent-Length: 128`;
+            }
+            
+            if (currentMethod === 'OPTIONS') {
+                requestHeaders += `\nAccess-Control-Request-Method: ${currentMethod}`;
+            }
+            
+            // Highlight the method
+            requestHeaders = requestHeaders.replace(
+                currentMethod, 
+                `<span class="hl method-${currentMethod.toLowerCase()}">${currentMethod}</span>`
+            );
+            
+            requestDisplay.innerHTML = requestHeaders;
+        }
+
+        // Load an example response
+        function loadExample(method, code, text) {
+            currentMethod = method;
+            currentUrl = document.getElementById('url-input').value;
+            
+            // Update UI
+            updateMethodButtons();
+            updateRequestDisplay();
+            
+            // Get explanation data
+            const explanationData = statusExplanations[code] || {
+                detail: "No detailed explanation available for this status code.",
+                template: `HTTP/1.1 ${code} ${text}\nServer: nginx/1.18.0\nDate: {DATE}`
+            };
+            
+            // Format response
+            let response = explanationData.template.replace('{DATE}', formatDate());
+            
+            // Highlight status code
+            const statusClass = `status-${Math.floor(code/100)}xx`;
+            response = response.replace(
+                `${code} ${text}`,
+                `<span class="hl ${statusClass}">${code} ${text}</span>`
+            );
+            
+            // Update response display
+            document.getElementById('response-display').innerHTML = response;
+            
+            // Update explanation
+            document.getElementById('explanation').innerHTML = 
+                `<strong>${code} ${text}</strong> - ${explanationData.detail.replace(/\n/g, '<br>')}`;
+        }
+
+        // Update active method button
+        function updateMethodButtons() {
+            document.querySelectorAll('.method-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.method === currentMethod) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set up method buttons
+            document.querySelectorAll('.method-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    currentMethod = this.dataset.method;
+                    updateMethodButtons();
+                    updateRequestDisplay();
+                });
+            });
+            
+            // Set up URL input
+            document.getElementById('url-input').addEventListener('input', function() {
+                currentUrl = this.value;
+                updateRequestDisplay();
+            });
+            
+            // Set up send button
+            document.getElementById('send-btn').addEventListener('click', function() {
+                // For demo purposes, we'll return different codes based on method
+                let code = 200;
+                let text = 'OK';
+                
+                if (currentMethod === 'POST') {
+                    code = 201;
+                    text = 'Created';
+                } else if (currentMethod === 'DELETE') {
+                    code = 204;
+                    text = 'No Content';
+                } else if (currentMethod === 'OPTIONS') {
+                    code = 204;
+                    text = 'No Content';
+                }
+                
+                loadExample(currentMethod, code, text);
+            });
+            
+            // Initialize with default example
+            loadExample('GET', 200, 'OK');
+        });
+    </script>
+</body>
+</html>
